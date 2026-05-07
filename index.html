@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Documentos de Cobro &#x2014; GSSPIM</title>
+<script src="xlsx.full.min.js"></script>
+<script src="jszip.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#f5f3ee;--surface:#fff;--accent:#1a3a5c;--accent2:#c8a96e;--text:#1c1c1c;--muted:#6b6b6b;--border:#d9d5cc;--ok:#2d7a4f;--err:#b83232;--r:4px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--accent);color:#fff;padding:20px 40px;display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--accent2)}
+.logo{width:44px;height:44px;background:var(--accent2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;color:var(--accent);flex-shrink:0;font-weight:900}
+header h1{font-family:'DM Serif Display',serif;font-size:20px;font-weight:400}
+header p{font-size:12px;opacity:.7;margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:32px;margin-bottom:24px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.card-title::before{content:'';display:block;width:4px;height:20px;background:var(--accent2);border-radius:2px}
+.card-sub{font-size:13px;color:var(--muted);margin-bottom:24px;padding-left:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.fg{display:flex;flex-direction:column;gap:6px}
+.full{grid-column:1/-1}
+label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.req{color:var(--accent2);margin-left:2px}
+input,select{font-family:'DM Sans',sans-serif;font-size:14px;border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;color:var(--text);background:var(--bg);transition:.15s;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,58,92,.1);background:#fff}
+input[readonly]{color:var(--muted);background:#f0ede8;cursor:not-allowed}
+.ac-wrap{position:relative}
+.ac-drop{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--accent);border-top:none;border-radius:0 0 var(--r) var(--r);max-height:240px;overflow-y:auto;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.12);display:none}
+.ac-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0ede8}
+.ac-item:hover{background:#eef2f7}
+.ac-item span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+hr.div{border:none;border-top:1px solid var(--border);margin:24px 0}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:12px 24px;border:none;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:#0f2540;transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,58,92,.3)}
+.btn-s{background:var(--accent2);color:var(--accent)}.btn-s:hover{background:#b89558;transform:translateY(-1px)}
+.btn-o{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}.btn-o:hover{background:var(--accent);color:#fff}
+.preview-box{background:#f9f8f5;border:1px dashed var(--border);border-radius:var(--r);padding:20px;font-size:13px;line-height:1.8}
+.tag{display:inline-block;background:#eef2f7;color:var(--accent);border-radius:2px;padding:1px 6px;font-size:11px;font-weight:600;margin:0 2px}
+.alert{padding:12px 16px;border-radius:var(--r);font-size:13px;margin-bottom:16px}
+.al-ok{background:#f0f9f4;border:1px solid #a3d9b8;color:var(--ok)}
+.al-err{background:#fdf2f2;border:1px solid #e8a4a4;color:var(--err)}
+.hint{font-size:11px;color:var(--muted);margin-top:2px}
+.cc{font-size:11px;text-align:right;color:var(--muted)}
+.cc.warn{color:var(--accent2)}.cc.over{color:var(--err);font-weight:600}
+.imp-row{display:flex;gap:12px;align-items:flex-start}
+.calc-box{background:#eef2f7;border:1px solid #c5d5e8;border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--accent);min-width:220px;white-space:nowrap;display:none}
+.calc-box strong{display:block;font-size:11px;font-weight:600;margin-bottom:2px}
+footer{text-align:center;padding:20px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);margin-top:40px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.full{grid-column:1}header{padding:16px 20px}.container{padding:24px 16px}.card{padding:20px}.imp-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">BM</div>
+  <div>
+    <h1>Generador de Documentos de Cobro</h1>
+    <p>Gerencia de Supervisi&#xF3;n de Sistemas de Pagos e Infraestructuras de Mercado</p>
+  </div>
+</header>
+<div class="container">
+  <div id="alert-area"></div>
+  <div class="card">
+    <div class="card-title">Datos de la Instituci&#xF3;n</div>
+    <div class="card-sub">Busca la instituci&#xF3;n para autocompletar CASFIM</div>
+    <div class="grid">
+      <div class="fg full">
+        <label>Nombre Instituci&#xF3;n <span class="req">*</span></label>
+        <div class="ac-wrap">
+          <input type="text" id="inst-search" placeholder="Escribe para buscar..." autocomplete="off">
+          <div class="ac-drop" id="inst-drop"></div>
+        </div>
+      </div>
+      <div class="fg"><label>CASFIM <span class="req">*</span></label><input type="text" id="casfim" readonly placeholder="Autom&#xE1;tico"></div>
+      <div class="fg">
+        <label>Cuenta de Resultados (Sin d&#xED;gito verificador)</label>
+        <input type="text" id="cuenta" readonly value="385050311">
+        <div class="hint">Fija para todas las instituciones</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Datos del Cobro</div>
+    <div class="card-sub">Informaci&#xF3;n de la sanci&#xF3;n y el memorando</div>
+    <div class="grid">
+      <div class="fg"><label>No. Resoluci&#xF3;n <span class="req">*</span></label><input type="text" id="no-res" placeholder="Ej: S22-118-2026"></div>
+      <div class="fg"><label>Expediente <span class="req">*</span></label><input type="text" id="exp" placeholder="Ej: SP.ID.CDA.2025.109"></div>
+      <div class="fg full">
+        <label>Monto Original de la Sanci&#xF3;n (MXN) <span class="req">*</span></label>
+        <div class="imp-row">
+          <div style="flex:1"><input type="number" id="importe" placeholder="Ej: 92601.23" min="0" step="0.01" oninput="updImporte()"></div>
+          <div class="calc-box" id="calc-box"><strong>Importe con 20% de descuento:</strong><span id="imp-desc">&#x2014;</span></div>
+        </div>
+        <div class="hint">Se aplica el 20% de descuento por pronto pago (Art. 67 LBM)</div>
+      </div>
+      <div class="fg">
+        <label>Tipo de Operaci&#xF3;n</label>
+        <select id="operacion"><option value="S">S &#x2014; Sanci&#xF3;n</option><option value="D">D &#x2014; Devoluci&#xF3;n</option></select>
+      </div>
+      <div class="fg">
+        <label>* TEXTO (m&#xE1;x. 42 caracteres) <span class="req">*</span></label>
+        <input type="text" id="texto" placeholder="S22-118-2026/SP.ID.CDA.2025.109" maxlength="60" oninput="updCC();updPreview()">
+        <div class="cc" id="cc">0 / 42</div>
+        <div class="hint">Formato: No.Resoluci&#xF3;n/Expediente</div>
+      </div>
+    </div>
+    <hr class="div">
+    <div style="margin-bottom:16px;font-weight:600;font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px">Datos del Memorando Word</div>
+    <div class="grid">
+      <div class="fg"><label>No. Memorando (Ref.) <span class="req">*</span></label><input type="text" id="memo" placeholder="Ej: D02-2026-079"></div>
+      <div class="fg"><label>Fecha del Memorando <span class="req">*</span></label><input type="date" id="f-memo"></div>
+      <div class="fg"><label>Fecha del escrito de la instituci&#xF3;n <span class="req">*</span></label><input type="date" id="f-escrito"></div>
+      <div class="fg"><label>Fecha de recepci&#xF3;n del escrito <span class="req">*</span></label><input type="date" id="f-recep"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Vista Previa</div>
+    <div class="card-sub">Resumen de los datos ingresados</div>
+    <div class="preview-box" id="preview"><em style="color:var(--muted)">Completa los datos para ver la vista previa...</em></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Generar Documentos</div>
+    <div class="card-sub">Genera el layout Excel para BBVA y el Memorando Word</div>
+    <div class="btns">
+      <button class="btn btn-p" onclick="generateExcel()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Generar Excel (Layout BBVA)
+      </button>
+      <button class="btn btn-s" onclick="generateWord()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Generar Memorando (.docx)
+      </button>
+      <button class="btn btn-o" onclick="generateAll()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+        Generar Ambos
+      </button>
+    </div>
+  </div>
+</div>
+<footer>Banco de M&#xE9;xico &#xB7; GSSPIM &#xB7; Herramienta interna de generaci&#xF3;n de documentos de cobro de sanciones</footer>
+<script src="app.js"></script>
+</body>
+</html>
